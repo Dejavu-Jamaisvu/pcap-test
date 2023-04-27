@@ -2,6 +2,10 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include <net/ethernet.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+
 void usage() {
     printf("syntax: pcap-test <interface>\n");
     printf("sample: pcap-test wlan0\n");
@@ -11,6 +15,7 @@ void usage() {
 typedef struct {
     char* dev_;// 네트워크 인터페이스 이름
 } Param;
+
 
 Param param = {
     .dev_ = NULL
@@ -24,6 +29,7 @@ bool parse(Param* param, int argc, char* argv[]) {
     param->dev_ = argv[1];// 첫 번째 인수를 네트워크 인터페이스 이름으로 설정?!
     return true;
 }
+
 
 int main(int argc, char* argv[]) {
     if (!parse(&param, argc, argv))  // 명령행 인수 파싱 실패 시
@@ -43,16 +49,29 @@ int main(int argc, char* argv[]) {
         if (res == 0) continue;// 패킷이 존재하지 않는 경우 다음 패킷으로 건너뛰기
         if (res == PCAP_ERROR || res == PCAP_ERROR_BREAK) {// 패킷이 존재하지 않는 경우 다음 패킷으로 건너뛰기
             printf("pcap_next_ex return %d(%s)\n", res, pcap_geterr(pcap));
-
-
-
-
-
-
-
             break;// 루프 종료
         }
         printf("%u bytes captured\n", header->caplen);
+
+
+
+
+        /* print pkt timestamp and pkt len */
+        printf("%ld:%ld (%ld)\n", header->ts.tv_sec, header->ts.tv_usec, header->len);
+
+        /* Print the packet */
+        for (int i=0; (i < header->caplen) ; i++)
+        {
+            printf("%.2x ", packet[i]);
+            if ( (i % 16) == 0) printf("\n");
+        }
+
+        printf("\n\n");
+
+
+
+
+
     }
 
     pcap_close(pcap);
